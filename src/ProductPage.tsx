@@ -5,6 +5,10 @@ import { ArrowRight, Check, Layers3, MessageCircle, MonitorSmartphone, MoveRight
 import { BrowserFrame } from './components/BrowserFrame'
 import { Reveal } from './components/Reveal'
 import { SectionHeading } from './components/SectionHeading'
+import {
+  defaultContactSubmissionState,
+  submitContactForm,
+} from './contact-form'
 import { businessOptions, packageCards, type BusinessKey } from './data'
 import {
   businessPackageGuide,
@@ -23,7 +27,9 @@ export default function ProductPage() {
   const [selectedPackageName, setSelectedPackageName] = useState<PackageName>(
     businessPackageGuide.restaurante.packageName,
   )
-  const [formSubmitted, setFormSubmitted] = useState(false)
+  const [submissionState, setSubmissionState] = useState(
+    defaultContactSubmissionState,
+  )
 
   const deferredBusiness = useDeferredValue(selectedBusiness)
   const activeBusiness = useMemo(
@@ -63,10 +69,26 @@ export default function ProductPage() {
       }
     }
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    event.currentTarget.reset()
-    setFormSubmitted(true)
+    const form = event.currentTarget
+
+    setSubmissionState({
+      status: 'submitting',
+      message: 'Enviando solicitud...',
+    })
+
+    const nextState = await submitContactForm(form, {
+      packageName: selectedPackage.name,
+      packagePrice: selectedPackage.price,
+      recommendedFor: activeBusiness.label,
+    })
+
+    if (nextState.status === 'success') {
+      form.reset()
+    }
+
+    setSubmissionState(nextState)
   }
 
   return (
@@ -435,20 +457,33 @@ export default function ProductPage() {
                             type="text"
                             name="nombre"
                             placeholder="Tu nombre"
+                            autoComplete="name"
+                            inputMode="text"
                             required
                           />
                         </Field>
-                        <Field label="Nombre del negocio">
+                        <Field label="Correo de contacto">
                           <input
-                            type="text"
-                            name="negocio"
-                            placeholder="Ej. Clínica Horizonte"
+                            type="email"
+                            name="correo"
+                            placeholder="tu@correo.com"
+                            autoComplete="email"
+                            inputMode="email"
                             required
                           />
                         </Field>
                       </div>
 
                       <div className="grid gap-5 sm:grid-cols-2">
+                        <Field label="Nombre del negocio">
+                          <input
+                            type="text"
+                            name="negocio"
+                            placeholder="Ej. Clínica Horizonte"
+                            autoComplete="organization"
+                            required
+                          />
+                        </Field>
                         <Field label="Tipo de negocio">
                           <select name="tipo" defaultValue="" required>
                             <option value="" disabled>
@@ -462,18 +497,19 @@ export default function ProductPage() {
                             <option>Otro</option>
                           </select>
                         </Field>
-                        <Field label="Presupuesto aproximado">
-                          <select name="presupuesto" defaultValue="" required>
-                            <option value="" disabled>
-                              Selecciona un rango
-                            </option>
-                            <option>Q500 a Q1,000</option>
-                            <option>Q1,000 a Q2,500</option>
-                            <option>Q2,500 en adelante</option>
-                            <option>Necesito una cotización personalizada</option>
-                          </select>
-                        </Field>
                       </div>
+
+                      <Field label="Presupuesto aproximado">
+                        <select name="presupuesto" defaultValue="" required>
+                          <option value="" disabled>
+                            Selecciona un rango
+                          </option>
+                          <option>Q500 a Q1,000</option>
+                          <option>Q1,000 a Q2,500</option>
+                          <option>Q2,500 en adelante</option>
+                          <option>Necesito una cotización personalizada</option>
+                        </select>
+                      </Field>
 
                       <Field label="Mensaje">
                         <textarea
@@ -493,25 +529,45 @@ export default function ProductPage() {
                         <span className="font-semibold text-slate-900">
                           {selectedPackage.price}
                         </span>
+                        . La solicitud llegará a{' '}
+                        <span className="font-semibold text-slate-900">
+                          prisma.gt@outlook.com
+                        </span>
                         .
                       </div>
 
                       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-                        <button type="submit" className={primaryButtonClass}>
-                          Enviar solicitud
+                        <button
+                          type="submit"
+                          disabled={submissionState.status === 'submitting'}
+                          className={`${primaryButtonClass} ${
+                            submissionState.status === 'submitting'
+                              ? 'pointer-events-none opacity-75'
+                              : ''
+                          }`}
+                        >
+                          {submissionState.status === 'submitting'
+                            ? 'Enviando solicitud...'
+                            : 'Enviar solicitud'}
                           <ArrowRight className="h-4 w-4" />
                         </button>
 
-                        <AnimatePresence>
-                          {formSubmitted ? (
+                        <AnimatePresence mode="wait">
+                          {submissionState.status !== 'idle' ? (
                             <motion.p
+                              key={submissionState.status}
                               initial={{ opacity: 0, y: 8 }}
                               animate={{ opacity: 1, y: 0 }}
                               exit={{ opacity: 0, y: -8 }}
-                              className="text-sm font-medium text-emerald-600"
+                              className={`text-sm font-medium ${
+                                submissionState.status === 'success'
+                                  ? 'text-emerald-600'
+                                  : submissionState.status === 'error'
+                                    ? 'text-rose-600'
+                                    : 'text-slate-500'
+                              }`}
                             >
-                              Solicitud registrada. Prisma puede responder con una
-                              propuesta inicial en menos de 24 horas.
+                              {submissionState.message}
                             </motion.p>
                           ) : null}
                         </AnimatePresence>
