@@ -21,6 +21,7 @@ type ContactRequestPayload = {
   email: string
   businessName: string
   businessType: string
+  customBusinessType: string
   budget: string
   message: string
   packageName: string
@@ -53,11 +54,16 @@ export async function submitContactForm(
     email: readFormValue(formData, 'correo'),
     businessName: readFormValue(formData, 'negocio'),
     businessType: readFormValue(formData, 'tipo'),
+    customBusinessType: readFormValue(formData, 'tipoOtro'),
     budget: readFormValue(formData, 'presupuesto'),
     message: readFormValue(formData, 'mensaje'),
     packageName: metadata.packageName,
     packagePrice: metadata.packagePrice,
     recommendedFor: metadata.recommendedFor,
+  }
+
+  if (payload.businessType === 'Otro' && payload.customBusinessType) {
+    payload.businessType = payload.customBusinessType
   }
 
   try {

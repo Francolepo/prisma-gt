@@ -27,6 +27,7 @@ export default function ProductPage() {
   const [selectedPackageName, setSelectedPackageName] = useState<PackageName>(
     businessPackageGuide.restaurante.packageName,
   )
+  const [contactBusinessType, setContactBusinessType] = useState('')
   const [submissionState, setSubmissionState] = useState(
     defaultContactSubmissionState,
   )
@@ -86,6 +87,7 @@ export default function ProductPage() {
 
     if (nextState.status === 'success') {
       form.reset()
+      setContactBusinessType('')
     }
 
     setSubmissionState(nextState)
@@ -485,7 +487,14 @@ export default function ProductPage() {
                           />
                         </Field>
                         <Field label="Tipo de negocio">
-                          <select name="tipo" defaultValue="" required>
+                          <select
+                            name="tipo"
+                            value={contactBusinessType}
+                            onChange={(event) =>
+                              setContactBusinessType(event.target.value)
+                            }
+                            required
+                          >
                             <option value="" disabled>
                               Selecciona una opción
                             </option>
@@ -498,6 +507,18 @@ export default function ProductPage() {
                           </select>
                         </Field>
                       </div>
+
+                      {contactBusinessType === 'Otro' ? (
+                        <Field label="Especifica tu tipo de negocio">
+                          <input
+                            type="text"
+                            name="tipoOtro"
+                            placeholder="Ej. Inmobiliaria, bufete, taller..."
+                            autoComplete="organization-title"
+                            required
+                          />
+                        </Field>
+                      ) : null}
 
                       <Field label="Presupuesto aproximado">
                         <select name="presupuesto" defaultValue="" required>

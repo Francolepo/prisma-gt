@@ -3,6 +3,7 @@ interface ContactRequestPayload {
   email?: string
   businessName?: string
   businessType?: string
+  customBusinessType?: string
   budget?: string
   message?: string
   packageName?: string
@@ -74,7 +75,12 @@ export async function onRequestPost({ request, env }: PagesContext) {
   const name = normalize(payload.name)
   const email = normalize(payload.email)
   const businessName = normalize(payload.businessName)
-  const businessType = normalize(payload.businessType)
+  const businessTypeValue = normalize(payload.businessType)
+  const customBusinessType = normalize(payload.customBusinessType)
+  const businessType =
+    businessTypeValue === 'Otro' && customBusinessType
+      ? customBusinessType
+      : businessTypeValue
   const budget = normalize(payload.budget)
   const message = normalize(payload.message)
   const packageName = normalize(payload.packageName)
